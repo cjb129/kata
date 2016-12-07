@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'set'
 def search(numberToFind, array)
-  index = array.length / 2
+  index = (array.length - 1) / 2
 
   if array[index] == numberToFind
     return index
