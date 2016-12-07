@@ -40,7 +40,7 @@ class SearchTest < Test::Unit::TestCase
     assert_equal true, search(2, Array.new([1,2]))
   end
 
-  def test_two_element_array_where_param_does_not_exist
+  def test_two_element_array_that_does_not_include_param
     assert_equal false, search(0, Array.new([1,2]))
   end
 
@@ -56,7 +56,7 @@ class SearchTest < Test::Unit::TestCase
     assert_equal true, search(2, Array.new([0,1,2]))
   end
 
-  def test_three_element_array_where_param_does_not_exist
+  def test_three_element_array_that_does_not_include_param
     assert_equal false, search(5, Array.new([0,1,2]))
   end
 
@@ -76,7 +76,7 @@ class SearchTest < Test::Unit::TestCase
     assert_equal true, search(3, Array.new([0,1,2,3]))
   end
 
-  def test_four_element_array_where_param_does_not_exist
+  def test_four_element_array_that_does_not_include_param
     assert_equal false, search(4, Array.new([0,1,2,3]))
   end
 end
