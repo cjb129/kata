@@ -2,6 +2,7 @@ require 'rubygems'
 gem 'test-unit'
 
 class Frame
+  
   def initialize(f, s)
     @first_roll = f
     @second_roll = s
