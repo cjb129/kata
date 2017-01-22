@@ -3,8 +3,6 @@ gem 'test-unit'
 
 class Frame
   def initialize(f, s)
-    @spare = false
-    @strike = false
     @first_roll = f
     @second_roll = s
   end
@@ -28,39 +26,81 @@ class Frame
 end
 
 class Game
+  
   def initialize
-    @score = Array.new
+    @all_frames = Array.new
+    @all_rolls = Array.new
+    @current_frame_number = 0
+  end
+
+  def Roll(pin)
+    @all_rolls.push(pin)    
   end
 
   def Score()
-    @score.push(Frame.new(0,0))
-    @score.push(Frame.new(0,0))
-
-    totalScore = 0
-    currentFrame = 0
-    for frame in @score
-      if currentFrame < 10
-        if frame.is_spare
-          totalScore += @score[currentFrame+1].get_first
-        end
-        if frame.is_strike
-          if @score[currentFrame+1].is_strike
-            totalScore += @score[currentFrame+1].get_first + @score[currentFrame+2].get_first
-          else
-            totalScore += @score[currentFrame+1].get_first + @score[currentFrame+1].get_second
-          end
-        end
-        totalScore += frame.get_first + frame.get_second
-        currentFrame += 1
+    prepare_scores
+    total_score = 0
+    
+    for current_frame_score in @all_frames
+      if @current_frame_number < 10
+        total_score += spare_bonus(current_frame_score)
+        total_score += strike_bonus(current_frame_score)        
+        total_score += current_frame_score.get_first + current_frame_score.get_second
+        @current_frame_number += 1
       end
     end
-    p currentFrame
-    return totalScore
+    
+    return total_score
+  end
+  
+  #parse list of scores into frames
+  def prepare_scores
+    i = 0
+    while @all_rolls[i]
+      if(@all_rolls[i] == 10)
+        #add empty second roll for strikes
+        @all_rolls.insert(i+1, 0)
+      end
+
+      if(!@all_rolls[i+1])
+        #allows for incomplete frames
+        f = Frame.new(@all_rolls[i], 0)
+      else
+        #build frame
+        f = Frame.new(@all_rolls[i], @all_rolls[i+1])
+      end
+
+      @all_frames.push(f)
+      i += 2
+    end
+    
+    #cushion to account for out of bounds errors
+    @all_frames.push(Frame.new(0, 0))
+    @all_frames.push(Frame.new(0, 0))
+  end
+  
+  def spare_bonus(current_frame_score)
+    return current_frame_score.is_spare ? add_spare_bonus : 0
+  end
+  
+  def add_spare_bonus
+    return @all_frames[@current_frame_number+1].get_first
+  end
+  
+  def strike_bonus(current_frame_score)
+    return current_frame_score.is_strike ? add_strike_bonus : 0
   end
 
-  def Roll(frame)
-    @score.push(frame)
-    # p frame
+  def add_strike_bonus
+    return @all_frames[@current_frame_number+1].is_strike ? add_next_frame_is_strike_bonus : add_next_frame_is_not_strike_bonus
+  end
+  
+  def add_next_frame_is_strike_bonus
+    return @all_frames[@current_frame_number+1].get_first + @all_frames[@current_frame_number+2].get_first    
+  end
+  
+  def add_next_frame_is_not_strike_bonus
+    return @all_frames[@current_frame_number+1].get_first + @all_frames[@current_frame_number+1].get_second    
   end
 
 end
@@ -75,23 +115,14 @@ class GameTest < Test::Unit::TestCase
 
   def roll_many(frames, score)
       for r in 1..frames
-        @g.Roll(Frame.new(score,score))
+        @g.Roll(score)
+        @g.Roll(score)
       end
   end
 
   def roll_list(rolls)
-    i = 0
-    while rolls[i]
-      if(rolls[i]%2==0 and rolls[i]==10)
-        rolls.insert(i+1,0)
-      end
-      if(rolls[i+1]==nil)
-        f = Frame.new(rolls[i], 0)
-      else
-        f = Frame.new(rolls[i], rolls[i+1])
-      end
+    for f in rolls
       @g.Roll(f)
-      i+=2
     end
   end
 
@@ -100,8 +131,7 @@ class GameTest < Test::Unit::TestCase
   end
 
   def test_roll_1_returns_1
-    f = Frame.new(1,0)
-    @g.Roll(f)
+    @g.Roll(1)
     assert_equal 1, @g.Score
   end
 
@@ -129,4 +159,10 @@ class GameTest < Test::Unit::TestCase
     roll_list([1,4,4,5,6,4,5,5,10,0,1,7,3,6,4,10,2,8,6])
     assert_equal 133, @g.Score
   end
+  
+  def test_dads_best_score
+    roll_list([10,10,10,10,10,10,10,10,10,8,2,10])
+    assert_equal 278, @g.Score
+  end
+  
 end
